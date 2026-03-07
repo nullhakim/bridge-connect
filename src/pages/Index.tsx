@@ -45,7 +45,7 @@ export default function Index() {
                       {data.sales.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {data.product.name}
+                      {data.products.length} produk tersedia
                     </p>
                   </div>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
