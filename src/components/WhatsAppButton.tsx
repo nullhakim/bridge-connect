@@ -1,13 +1,15 @@
 import { MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
-import { trackContact, getDeviceInfo } from "@/lib/metaPixel";
+import { trackContact } from "@/lib/metaPixel";
+import { insertLead } from "@/lib/leads";
 
 interface WhatsAppButtonProps {
   phone: string;
   salesName: string;
   salesSlug: string;
   productName: string;
+  productId?: string;
 }
 
 export default function WhatsAppButton({
@@ -15,17 +17,15 @@ export default function WhatsAppButton({
   salesName,
   salesSlug,
   productName,
+  productId,
 }: WhatsAppButtonProps) {
   const handleClick = () => {
-    // Track Meta Pixel
     trackContact(salesSlug);
 
-    // Log lead (console for now, Supabase integration ready)
-    const deviceInfo = getDeviceInfo();
-    console.log("[Lead Logged]", {
-      sales_id: salesSlug,
-      timestamp: new Date().toISOString(),
-      device_info: deviceInfo,
+    // Insert lead to Supabase (fire-and-forget)
+    insertLead({
+      salesId: salesSlug,
+      productId,
     });
   };
 

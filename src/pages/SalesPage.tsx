@@ -1,30 +1,41 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { getSalesPageData } from "@/data/mockSalesData";
+import { getSalesProfile } from "@/data/mockSalesData";
+import { useProducts } from "@/hooks/useProducts";
+import { useCategories } from "@/hooks/useCategories";
 import SalesCard from "@/components/SalesCard";
 import ProductCard from "@/components/ProductCard";
+import CategoryFilter from "@/components/CategoryFilter";
 import SalesNotFound from "@/components/SalesNotFound";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Loader2 } from "lucide-react";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { trackContact } from "@/lib/metaPixel";
 
 export default function SalesPage() {
   const { slug } = useParams<{ slug: string }>();
-  const data = slug ? getSalesPageData(slug) : null;
+  const sales = slug ? getSalesProfile(slug) : null;
+  const { data: products, isLoading: productsLoading } = useProducts();
+  const { data: categories } = useCategories();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  if (!data) {
+  if (!sales) {
     return <SalesNotFound />;
   }
 
+  const filteredProducts = selectedCategory
+    ? (products || []).filter((p) => p.category_id === selectedCategory)
+    : products || [];
+
   const handleWhatsApp = () => {
-    trackContact(data.sales.slug);
+    trackContact(sales.slug);
   };
 
-  const waUrl = buildWhatsAppUrl(data.sales.phone, data.sales.name, "katalog produk");
+  const waUrl = buildWhatsAppUrl(sales.phone, sales.name, "katalog produk");
 
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-lg px-4 py-6">
-        <SalesCard sales={data.sales} />
+        <SalesCard sales={sales} />
 
         <a
           href={waUrl}
@@ -38,17 +49,38 @@ export default function SalesPage() {
         </a>
 
         <div className="mt-6">
-          <h2 className="mb-4 text-lg font-bold text-foreground">Koleksi Produk</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {data.products.map((product, i) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                salesSlug={data.sales.slug}
-                index={i}
+          <h2 className="mb-3 text-lg font-bold text-foreground">Koleksi Produk</h2>
+
+          {categories && categories.length > 0 && (
+            <div className="mb-4">
+              <CategoryFilter
+                categories={categories}
+                selected={selectedCategory}
+                onSelect={setSelectedCategory}
               />
-            ))}
-          </div>
+            </div>
+          )}
+
+          {productsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Belum ada produk tersedia.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {filteredProducts.map((product, i) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  salesSlug={sales.slug}
+                  index={i}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
