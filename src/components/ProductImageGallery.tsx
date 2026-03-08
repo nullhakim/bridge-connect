@@ -9,11 +9,11 @@ interface ProductImageGalleryProps {
   productName: string;
 }
 
-function getDistance(t1: Touch, t2: Touch) {
+function getDistance(t1: React.Touch, t2: React.Touch) {
   return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
 }
 
-function getMidpoint(t1: Touch, t2: Touch) {
+function getMidpoint(t1: React.Touch, t2: React.Touch) {
   return {
     x: (t1.clientX + t2.clientX) / 2,
     y: (t1.clientY + t2.clientY) / 2,
