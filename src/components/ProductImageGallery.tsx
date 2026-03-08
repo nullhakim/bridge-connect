@@ -47,7 +47,7 @@ export default function ProductImageGallery({
     startTranslate: { x: number; y: number };
   } | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
-
+  const zoomContainerRef = useRef<HTMLDivElement>(null);
   const resetZoomState = useCallback(() => {
     setScale(1);
     setTranslate({ x: 0, y: 0 });
