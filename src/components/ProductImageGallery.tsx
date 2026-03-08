@@ -9,7 +9,6 @@ interface ProductImageGalleryProps {
   productName: string;
 }
 
-
 export default function ProductImageGallery({
   mainImage,
   images,
@@ -27,14 +26,30 @@ export default function ProductImageGallery({
   const [zoomed, setZoomed] = useState(false);
   const currentImage = allImages[selectedIndex] || null;
 
-  // Pinch-to-zoom state
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
+
   const imgRef = useRef<HTMLImageElement>(null);
   const zoomContainerRef = useRef<HTMLDivElement>(null);
+  const pinchRef = useRef<{
+    startDist: number;
+    startScale: number;
+    startMid: { x: number; y: number };
+    startTranslate: { x: number; y: number };
+  } | null>(null);
+
+  const scaleRef = useRef(1);
+  const translateRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    scaleRef.current = scale;
+    translateRef.current = translate;
+  }, [scale, translate]);
+
   const resetZoomState = useCallback(() => {
     setScale(1);
     setTranslate({ x: 0, y: 0 });
+    pinchRef.current = null;
   }, []);
 
   const goNext = useCallback(() => {
@@ -49,7 +64,7 @@ export default function ProductImageGallery({
 
   const handleDragEnd = useCallback(
     (_: any, info: PanInfo) => {
-      if (scale > 1.1) return; // don't swipe when zoomed in
+      if (scale > 1.1) return;
       const threshold = 50;
       if (info.offset.x < -threshold) goNext();
       else if (info.offset.x > threshold) goPrev();
@@ -57,98 +72,98 @@ export default function ProductImageGallery({
     [goNext, goPrev, scale]
   );
 
-  // Use ref-based non-passive touch listeners so preventDefault() works
   useEffect(() => {
     const container = zoomContainerRef.current;
     if (!container || !zoomed) return;
 
-    let pinchData: {
-      startDist: number;
-      startScale: number;
-      startMid: { x: number; y: number };
-      startTranslate: { x: number; y: number };
-    } | null = null;
-
     const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        const dist = Math.hypot(
-          e.touches[1].clientX - e.touches[0].clientX,
-          e.touches[1].clientY - e.touches[0].clientY
-        );
-        const mid = {
-          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
-          y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
-        };
-        pinchData = {
-          startDist: dist,
-          startScale: scale,
-          startMid: mid,
-          startTranslate: { ...translate },
-        };
-      }
+      if (e.touches.length !== 2) return;
+
+      e.preventDefault();
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const mid = {
+        x: (t1.clientX + t2.clientX) / 2,
+        y: (t1.clientY + t2.clientY) / 2,
+      };
+
+      pinchRef.current = {
+        startDist: dist,
+        startScale: scaleRef.current,
+        startMid: mid,
+        startTranslate: { ...translateRef.current },
+      };
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && pinchData) {
-        e.preventDefault();
-        const dist = Math.hypot(
-          e.touches[1].clientX - e.touches[0].clientX,
-          e.touches[1].clientY - e.touches[0].clientY
-        );
-        const mid = {
-          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
-          y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
-        };
-        const newScale = Math.min(5, Math.max(1, pinchData.startScale * (dist / pinchData.startDist)));
-        const dx = mid.x - pinchData.startMid.x;
-        const dy = mid.y - pinchData.startMid.y;
-        setScale(newScale);
-        setTranslate({
-          x: pinchData.startTranslate.x + dx,
-          y: pinchData.startTranslate.y + dy,
-        });
-      }
+      const pinch = pinchRef.current;
+      if (e.touches.length !== 2 || !pinch) return;
+
+      e.preventDefault();
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const mid = {
+        x: (t1.clientX + t2.clientX) / 2,
+        y: (t1.clientY + t2.clientY) / 2,
+      };
+
+      const nextScale = Math.min(5, Math.max(1, pinch.startScale * (dist / pinch.startDist)));
+      const dx = mid.x - pinch.startMid.x;
+      const dy = mid.y - pinch.startMid.y;
+
+      setScale(nextScale);
+      setTranslate({
+        x: pinch.startTranslate.x + dx,
+        y: pinch.startTranslate.y + dy,
+      });
     };
 
     const onTouchEnd = () => {
-      pinchData = null;
-      setScale((s) => {
-        if (s <= 1.05) {
+      pinchRef.current = null;
+      setScale((currentScale) => {
+        if (currentScale <= 1.05) {
           setTranslate({ x: 0, y: 0 });
           return 1;
         }
-        return s;
+        return currentScale;
       });
     };
 
     container.addEventListener("touchstart", onTouchStart, { passive: false });
     container.addEventListener("touchmove", onTouchMove, { passive: false });
-    container.addEventListener("touchend", onTouchEnd);
+    container.addEventListener("touchend", onTouchEnd, { passive: true });
+    container.addEventListener("touchcancel", onTouchEnd, { passive: true });
 
     return () => {
       container.removeEventListener("touchstart", onTouchStart);
       container.removeEventListener("touchmove", onTouchMove);
       container.removeEventListener("touchend", onTouchEnd);
+      container.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [zoomed, scale, translate]);
-  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (scale > 1.1) {
-      resetZoomState();
-    } else {
-      setScale(2.5);
-      if (imgRef.current) {
-        const rect = imgRef.current.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        setTranslate({
-          x: (cx - e.clientX) * 1.5,
-          y: (cy - e.clientY) * 1.5,
-        });
+  }, [zoomed]);
+
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (scale > 1.1) {
+        resetZoomState();
+      } else {
+        setScale(2.5);
+        if (imgRef.current) {
+          const rect = imgRef.current.getBoundingClientRect();
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          setTranslate({
+            x: (cx - e.clientX) * 1.5,
+            y: (cy - e.clientY) * 1.5,
+          });
+        }
       }
-    }
-  }, [scale, resetZoomState]);
+    },
+    [scale, resetZoomState]
+  );
 
   if (allImages.length === 0) {
     return (
@@ -165,7 +180,6 @@ export default function ProductImageGallery({
   return (
     <>
       <div className="space-y-3">
-        {/* Main Image */}
         <div
           className="relative cursor-zoom-in overflow-hidden rounded-2xl bg-secondary"
           onClick={() => setZoomed(true)}
@@ -189,7 +203,6 @@ export default function ProductImageGallery({
           )}
         </div>
 
-        {/* Thumbnail Strip */}
         {thumbCount > 1 && (
           <div
             className="grid gap-2"
@@ -220,7 +233,6 @@ export default function ProductImageGallery({
         )}
       </div>
 
-      {/* Zoom Modal with Pinch-to-Zoom */}
       <AnimatePresence>
         {zoomed && (
           <motion.div
@@ -237,7 +249,6 @@ export default function ProductImageGallery({
               }
             }}
           >
-            {/* Close button */}
             <button
               className="absolute right-4 top-4 z-10 rounded-full bg-foreground/20 p-2 text-background backdrop-blur-sm transition-colors hover:bg-foreground/40"
               onClick={() => {
@@ -248,7 +259,6 @@ export default function ProductImageGallery({
               <X className="h-5 w-5" />
             </button>
 
-            {/* Prev / Next */}
             {allImages.length > 1 && (
               <>
                 <button
@@ -280,7 +290,7 @@ export default function ProductImageGallery({
               className="max-h-[85vh] max-w-[92vw] rounded-lg object-contain select-none"
               style={{
                 transform: `scale(${scale}) translate(${translate.x / scale}px, ${translate.y / scale}px)`,
-                transition: "transform 0.2s ease-out",
+                transition: pinchRef.current ? "none" : "transform 0.2s ease-out",
               }}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1, x: 0 }}
@@ -294,7 +304,6 @@ export default function ProductImageGallery({
               onDoubleClick={handleDoubleClick}
             />
 
-            {/* Counter */}
             {allImages.length > 1 && (
               <div className="absolute bottom-6 rounded-full bg-foreground/30 px-3 py-1 text-sm font-medium text-background backdrop-blur-sm">
                 {selectedIndex + 1} / {allImages.length}
