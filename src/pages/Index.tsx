@@ -27,6 +27,15 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-lg items-center justify-center px-4 py-3">
+          <img
+            src="/assets/logo-wift-hitam.png"
+            alt="Wift Logo"
+            className="h-8 w-auto"
+          />
+        </div>
+      </header>
       <div className="mx-auto max-w-lg px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
