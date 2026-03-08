@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence, type PanInfo } from "framer-motion";
 import { ShoppingBag, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
