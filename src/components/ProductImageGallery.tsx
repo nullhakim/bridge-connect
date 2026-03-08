@@ -40,12 +40,6 @@ export default function ProductImageGallery({
   // Pinch-to-zoom state
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
-  const pinchRef = useRef<{
-    startDist: number;
-    startScale: number;
-    startMid: { x: number; y: number };
-    startTranslate: { x: number; y: number };
-  } | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const zoomContainerRef = useRef<HTMLDivElement>(null);
   const resetZoomState = useCallback(() => {
