@@ -1,10 +1,29 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { getAllSlugs, getSalesPageData } from "@/data/mockSalesData";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+const DEFAULT_AVATAR = "https://api.dicebear.com/9.x/initials/svg?seed=";
 
 export default function Index() {
-  const slugs = getAllSlugs();
+  const { data: salesList, isLoading } = useQuery({
+    queryKey: ["salesList"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, slug, full_name, image_url, position")
+        .eq("role", "sales")
+        .not("slug", "is", null)
+        .order("full_name");
+
+      if (error) {
+        console.error("[salesList]", error);
+        return [];
+      }
+      return data ?? [];
+    },
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -22,38 +41,48 @@ export default function Index() {
             Sales Bridge Pages
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Demo landing pages — pilih salah satu profil di bawah
+            Pilih salah satu profil sales di bawah
           </p>
         </motion.div>
 
-        <div className="space-y-3">
-          {slugs.map((slug, i) => {
-            const data = getSalesPageData(slug)!;
-            return (
-              <motion.div
-                key={slug}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 + i * 0.08 }}
-              >
-                <Link
-                  to={`/${slug}`}
-                  className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:bg-secondary"
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : salesList && salesList.length > 0 ? (
+          <div className="space-y-3">
+            {salesList.map((s, i) => {
+              const name = s.full_name || "Sales";
+              const photo = s.image_url || `${DEFAULT_AVATAR}${encodeURIComponent(name)}`;
+              return (
+                <motion.div
+                  key={s.id}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 + i * 0.08 }}
                 >
-                  <div>
-                    <p className="font-semibold text-foreground">
-                      {data.sales.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {data.products.length} produk tersedia
-                    </p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                </Link>
-              </motion.div>
-            );
-          })}
-        </div>
+                  <Link
+                    to={`/${s.slug}`}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:bg-secondary"
+                  >
+                    <img
+                      src={photo}
+                      alt={name}
+                      className="h-10 w-10 shrink-0 rounded-full object-cover bg-muted"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-foreground">{name}</p>
+                      <p className="text-xs text-muted-foreground">{s.position || "Sales"}</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-center text-sm text-muted-foreground">Belum ada sales terdaftar.</p>
+        )}
       </div>
     </div>
   );
