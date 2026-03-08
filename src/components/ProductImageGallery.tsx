@@ -45,7 +45,6 @@ export default function ProductImageGallery({
   const resetZoomState = useCallback(() => {
     setScale(1);
     setTranslate({ x: 0, y: 0 });
-    pinchRef.current = null;
   }, []);
 
   const goNext = useCallback(() => {
