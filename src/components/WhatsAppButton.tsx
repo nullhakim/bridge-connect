@@ -19,17 +19,19 @@ export default function WhatsAppButton({
   productName,
   productId,
 }: WhatsAppButtonProps) {
-  const handleClick = () => {
+  const url = buildWhatsAppUrl(phone, salesName, productName);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     trackContact(salesSlug);
 
-    // Insert lead to Supabase (fire-and-forget)
     insertLead({
       salesId: salesSlug,
       productId,
     });
-  };
 
-  const url = buildWhatsAppUrl(phone, salesName, productName);
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <motion.div
