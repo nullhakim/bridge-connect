@@ -74,46 +74,81 @@ export default function ProductImageGallery({
     [goNext, goPrev, scale]
   );
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      const dist = getDistance(e.touches[0], e.touches[1]);
-      const mid = getMidpoint(e.touches[0], e.touches[1]);
-      pinchRef.current = {
-        startDist: dist,
-        startScale: scale,
-        startMid: mid,
-        startTranslate: { ...translate },
-      };
-    }
-  }, [scale, translate]);
+  // Use ref-based non-passive touch listeners so preventDefault() works
+  useEffect(() => {
+    const container = zoomContainerRef.current;
+    if (!container || !zoomed) return;
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2 && pinchRef.current) {
-      e.preventDefault();
-      const dist = getDistance(e.touches[0], e.touches[1]);
-      const mid = getMidpoint(e.touches[0], e.touches[1]);
-      const newScale = Math.min(
-        5,
-        Math.max(1, pinchRef.current.startScale * (dist / pinchRef.current.startDist))
-      );
-      const dx = mid.x - pinchRef.current.startMid.x;
-      const dy = mid.y - pinchRef.current.startMid.y;
-      setScale(newScale);
-      setTranslate({
-        x: pinchRef.current.startTranslate.x + dx,
-        y: pinchRef.current.startTranslate.y + dy,
+    let pinchData: {
+      startDist: number;
+      startScale: number;
+      startMid: { x: number; y: number };
+      startTranslate: { x: number; y: number };
+    } | null = null;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dist = Math.hypot(
+          e.touches[1].clientX - e.touches[0].clientX,
+          e.touches[1].clientY - e.touches[0].clientY
+        );
+        const mid = {
+          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+        };
+        pinchData = {
+          startDist: dist,
+          startScale: scale,
+          startMid: mid,
+          startTranslate: { ...translate },
+        };
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && pinchData) {
+        e.preventDefault();
+        const dist = Math.hypot(
+          e.touches[1].clientX - e.touches[0].clientX,
+          e.touches[1].clientY - e.touches[0].clientY
+        );
+        const mid = {
+          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+        };
+        const newScale = Math.min(5, Math.max(1, pinchData.startScale * (dist / pinchData.startDist)));
+        const dx = mid.x - pinchData.startMid.x;
+        const dy = mid.y - pinchData.startMid.y;
+        setScale(newScale);
+        setTranslate({
+          x: pinchData.startTranslate.x + dx,
+          y: pinchData.startTranslate.y + dy,
+        });
+      }
+    };
+
+    const onTouchEnd = () => {
+      pinchData = null;
+      setScale((s) => {
+        if (s <= 1.05) {
+          setTranslate({ x: 0, y: 0 });
+          return 1;
+        }
+        return s;
       });
-    }
-  }, []);
+    };
 
-  const handleTouchEnd = useCallback(() => {
-    pinchRef.current = null;
-    if (scale <= 1.05) {
-      setScale(1);
-      setTranslate({ x: 0, y: 0 });
-    }
-  }, [scale]);
+    container.addEventListener("touchstart", onTouchStart, { passive: false });
+    container.addEventListener("touchmove", onTouchMove, { passive: false });
+    container.addEventListener("touchend", onTouchEnd);
 
+    return () => {
+      container.removeEventListener("touchstart", onTouchStart);
+      container.removeEventListener("touchmove", onTouchMove);
+      container.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [zoomed, scale, translate]);
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (scale > 1.1) {
