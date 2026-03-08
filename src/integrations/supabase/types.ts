@@ -20,6 +20,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          size_chart_url: string | null
           slug: string
         }
         Insert: {
@@ -27,6 +28,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          size_chart_url?: string | null
           slug: string
         }
         Update: {
@@ -34,6 +36,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          size_chart_url?: string | null
           slug?: string
         }
         Relationships: []
@@ -138,6 +141,7 @@ export type Database = {
           price_per_unit: number
           product_name: string
           quantity: number
+          work_type: string
         }
         Insert: {
           created_at?: string | null
@@ -146,6 +150,7 @@ export type Database = {
           price_per_unit: number
           product_name: string
           quantity?: number
+          work_type?: string
         }
         Update: {
           created_at?: string | null
@@ -154,6 +159,7 @@ export type Database = {
           price_per_unit?: number
           product_name?: string
           quantity?: number
+          work_type?: string
         }
         Relationships: [
           {
@@ -170,6 +176,7 @@ export type Database = {
           amount_paid: number | null
           created_at: string | null
           customer_id: string | null
+          expedition_name: string | null
           id: string
           include_ppn: boolean
           order_number: number
@@ -178,13 +185,17 @@ export type Database = {
           ppn_amount: number
           ppn_percentage: number
           sales_id: string
+          shipping_cost: number
+          shipping_type: string
           status: string | null
           total_price: number | null
+          weight_kg: number | null
         }
         Insert: {
           amount_paid?: number | null
           created_at?: string | null
           customer_id?: string | null
+          expedition_name?: string | null
           id?: string
           include_ppn?: boolean
           order_number?: number
@@ -193,13 +204,17 @@ export type Database = {
           ppn_amount?: number
           ppn_percentage?: number
           sales_id: string
+          shipping_cost?: number
+          shipping_type?: string
           status?: string | null
           total_price?: number | null
+          weight_kg?: number | null
         }
         Update: {
           amount_paid?: number | null
           created_at?: string | null
           customer_id?: string | null
+          expedition_name?: string | null
           id?: string
           include_ppn?: boolean
           order_number?: number
@@ -208,8 +223,11 @@ export type Database = {
           ppn_amount?: number
           ppn_percentage?: number
           sales_id?: string
+          shipping_cost?: number
+          shipping_type?: string
           status?: string | null
           total_price?: number | null
+          weight_kg?: number | null
         }
         Relationships: [
           {
@@ -384,6 +402,7 @@ export type Database = {
           id: string
           image_url: string | null
           meta_pixel_id: string | null
+          password_changed: boolean
           phone_number: string | null
           position: string | null
           role: string | null
@@ -396,6 +415,7 @@ export type Database = {
           id: string
           image_url?: string | null
           meta_pixel_id?: string | null
+          password_changed?: boolean
           phone_number?: string | null
           position?: string | null
           role?: string | null
@@ -408,6 +428,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           meta_pixel_id?: string | null
+          password_changed?: boolean
           phone_number?: string | null
           position?: string | null
           role?: string | null

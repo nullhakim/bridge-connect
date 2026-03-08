@@ -51,7 +51,7 @@ export function useProduct(slug: string | undefined) {
       if (!slug) return null;
       const { data, error } = await supabase
         .from("products")
-        .select("*, categories(name), product_images(*)")
+        .select("*, categories(name, size_chart_url), product_images(*)")
         .eq("slug", slug)
         .maybeSingle();
 
@@ -67,7 +67,7 @@ export function useProduct(slug: string | undefined) {
         category_id: data.category_id,
         category_name: (data as any).categories?.name || null,
         description: (data as any).description || null,
-        size_chart_url: (data as any).size_chart_url || null,
+        size_chart_url: (data as any).categories?.size_chart_url || null,
         images: ((data as any).product_images || []).map((img: any) => ({
           id: img.id,
           image_url: img.image_url,
