@@ -43,6 +43,7 @@ export default function ProductImageGallery({
     [goNext, goPrev]
   );
 
+  if (allImages.length === 0) {
     return (
       <div className="overflow-hidden rounded-2xl bg-secondary">
         <div className="flex aspect-[4/3] w-full items-center justify-center">
