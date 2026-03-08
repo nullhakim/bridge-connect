@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface ProductImage {
+  id: string;
+  image_url: string;
+  sort_order: number;
+}
+
 export interface SupabaseProduct {
   id: string;
   name: string;
@@ -9,6 +15,9 @@ export interface SupabaseProduct {
   image_url: string | null;
   category_id: string | null;
   category_name?: string;
+  description?: string | null;
+  size_chart_url?: string | null;
+  images?: ProductImage[];
 }
 
 export function useProducts() {
@@ -42,7 +51,7 @@ export function useProduct(slug: string | undefined) {
       if (!slug) return null;
       const { data, error } = await supabase
         .from("products")
-        .select("*, categories(name)")
+        .select("*, categories(name), product_images(*)")
         .eq("slug", slug)
         .maybeSingle();
 
@@ -57,6 +66,13 @@ export function useProduct(slug: string | undefined) {
         image_url: data.image_url,
         category_id: data.category_id,
         category_name: (data as any).categories?.name || null,
+        description: (data as any).description || null,
+        size_chart_url: (data as any).size_chart_url || null,
+        images: ((data as any).product_images || []).map((img: any) => ({
+          id: img.id,
+          image_url: img.image_url,
+          sort_order: img.sort_order,
+        })),
       };
     },
     enabled: !!slug,
