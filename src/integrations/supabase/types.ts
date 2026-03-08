@@ -349,6 +349,7 @@ export type Database = {
           phone_number: string | null
           position: string | null
           role: string | null
+          slug: string | null
         }
         Insert: {
           bio?: string | null
@@ -360,6 +361,7 @@ export type Database = {
           phone_number?: string | null
           position?: string | null
           role?: string | null
+          slug?: string | null
         }
         Update: {
           bio?: string | null
@@ -371,6 +373,7 @@ export type Database = {
           phone_number?: string | null
           position?: string | null
           role?: string | null
+          slug?: string | null
         }
         Relationships: []
       }
