@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { getSalesProfile } from "@/data/mockSalesData";
+import { useSalesProfile } from "@/hooks/useSalesProfile";
 import { useProduct } from "@/hooks/useProducts";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import SalesNotFound from "@/components/SalesNotFound";
@@ -8,19 +8,19 @@ import { motion } from "framer-motion";
 
 export default function ProductDetailPage() {
   const { slug, productId } = useParams<{ slug: string; productId: string }>();
-  const sales = slug ? getSalesProfile(slug) : null;
+  const { data: sales, isLoading: salesLoading } = useSalesProfile(slug);
   const { data: product, isLoading } = useProduct(productId);
 
-  if (!sales) {
-    return <SalesNotFound />;
-  }
-
-  if (isLoading) {
+  if (salesLoading || isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
+  }
+
+  if (!sales) {
+    return <SalesNotFound />;
   }
 
   if (!product) {
@@ -54,7 +54,6 @@ export default function ProductDetailPage() {
           transition={{ duration: 0.5, delay: 0.15 }}
           className="space-y-5"
         >
-          {/* Product Image */}
           <div className="relative overflow-hidden rounded-2xl bg-secondary">
             {product.image_url ? (
               <img
@@ -75,7 +74,6 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          {/* Info */}
           <div>
             {product.category_name && (
               <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
