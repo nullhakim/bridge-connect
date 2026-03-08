@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { User, BadgeCheck } from "lucide-react";
-import type { SalesProfile } from "@/data/mockSalesData";
+import { BadgeCheck } from "lucide-react";
+import type { SalesProfile } from "@/hooks/useSalesProfile";
 
 interface SalesCardProps {
   sales: SalesProfile;
@@ -14,16 +14,12 @@ export default function SalesCard({ sales }: SalesCardProps) {
       transition={{ duration: 0.5 }}
       className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm"
     >
-      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-secondary">
-        {sales.photo ? (
-          <img
-            src={sales.photo}
-            alt={sales.name}
-            className="h-16 w-16 rounded-full object-cover"
-          />
-        ) : (
-          <User className="h-7 w-7 text-muted-foreground" />
-        )}
+      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-secondary overflow-hidden">
+        <img
+          src={sales.photo}
+          alt={sales.name}
+          className="h-16 w-16 rounded-full object-cover"
+        />
       </div>
       <div className="min-w-0">
         <div className="flex items-center gap-1.5">

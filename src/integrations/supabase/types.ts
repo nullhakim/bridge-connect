@@ -340,25 +340,40 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bio: string | null
           created_at: string | null
           full_name: string | null
           id: string
+          image_url: string | null
           meta_pixel_id: string | null
+          phone_number: string | null
+          position: string | null
           role: string | null
+          slug: string | null
         }
         Insert: {
+          bio?: string | null
           created_at?: string | null
           full_name?: string | null
           id: string
+          image_url?: string | null
           meta_pixel_id?: string | null
+          phone_number?: string | null
+          position?: string | null
           role?: string | null
+          slug?: string | null
         }
         Update: {
+          bio?: string | null
           created_at?: string | null
           full_name?: string | null
           id?: string
+          image_url?: string | null
           meta_pixel_id?: string | null
+          phone_number?: string | null
+          position?: string | null
           role?: string | null
+          slug?: string | null
         }
         Relationships: []
       }

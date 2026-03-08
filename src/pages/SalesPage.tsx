@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { getSalesProfile } from "@/data/mockSalesData";
+import { useSalesProfile } from "@/hooks/useSalesProfile";
 import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import SalesCard from "@/components/SalesCard";
@@ -13,10 +13,18 @@ import { trackContact } from "@/lib/metaPixel";
 
 export default function SalesPage() {
   const { slug } = useParams<{ slug: string }>();
-  const sales = slug ? getSalesProfile(slug) : null;
+  const { data: sales, isLoading: salesLoading } = useSalesProfile(slug);
   const { data: products, isLoading: productsLoading } = useProducts();
   const { data: categories } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  if (salesLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!sales) {
     return <SalesNotFound />;
