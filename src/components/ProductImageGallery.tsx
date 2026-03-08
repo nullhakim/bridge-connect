@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useCallback, useRef } from "react";
+import { motion, AnimatePresence, type PanInfo } from "framer-motion";
 import { ShoppingBag, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +33,15 @@ export default function ProductImageGallery({
   const goPrev = useCallback(() => {
     setSelectedIndex((i) => (i - 1 + allImages.length) % allImages.length);
   }, [allImages.length]);
+
+  const handleDragEnd = useCallback(
+    (_: any, info: PanInfo) => {
+      const threshold = 50;
+      if (info.offset.x < -threshold) goNext();
+      else if (info.offset.x > threshold) goPrev();
+    },
+    [goNext, goPrev]
+  );
 
   if (allImages.length === 0) {
     return (
@@ -151,11 +160,15 @@ export default function ProductImageGallery({
               key={currentImage}
               src={currentImage!}
               alt={`${productName} - ${selectedIndex + 1}`}
-              className="max-h-[85vh] max-w-[92vw] rounded-lg object-contain"
+              className="max-h-[85vh] max-w-[92vw] rounded-lg object-contain touch-pan-y"
               initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              animate={{ scale: 1, opacity: 1, x: 0 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.2 }}
+              drag={allImages.length > 1 ? "x" : false}
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.3}
+              onDragEnd={handleDragEnd}
               onClick={(e) => e.stopPropagation()}
             />
 
