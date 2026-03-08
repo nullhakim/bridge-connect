@@ -241,11 +241,12 @@ export default function ProductImageGallery({
       <AnimatePresence>
         {zoomed && (
           <motion.div
+            ref={zoomContainerRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 touch-none"
             onClick={() => {
               if (scale <= 1.1) {
                 resetZoomState();
@@ -293,10 +294,10 @@ export default function ProductImageGallery({
               key={currentImage}
               src={currentImage!}
               alt={`${productName} - ${selectedIndex + 1}`}
-              className="max-h-[85vh] max-w-[92vw] rounded-lg object-contain touch-none select-none"
+              className="max-h-[85vh] max-w-[92vw] rounded-lg object-contain select-none"
               style={{
                 transform: `scale(${scale}) translate(${translate.x / scale}px, ${translate.y / scale}px)`,
-                transition: pinchRef.current ? "none" : "transform 0.2s ease-out",
+                transition: "transform 0.2s ease-out",
               }}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1, x: 0 }}
@@ -308,9 +309,6 @@ export default function ProductImageGallery({
               onDragEnd={handleDragEnd}
               onClick={(e) => e.stopPropagation()}
               onDoubleClick={handleDoubleClick}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
             />
 
             {/* Counter */}
