@@ -47,7 +47,7 @@ export default function Index() {
             <Sparkles className="h-5 w-5 text-whatsapp" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">
-            Sales Bridge Pages
+            Sales WIFT Indonesia
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Pilih salah satu profil sales di bawah
