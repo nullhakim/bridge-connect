@@ -34,7 +34,15 @@ export default function ProductImageGallery({
     setSelectedIndex((i) => (i - 1 + allImages.length) % allImages.length);
   }, [allImages.length]);
 
-  if (allImages.length === 0) {
+  const handleDragEnd = useCallback(
+    (_: any, info: PanInfo) => {
+      const threshold = 50;
+      if (info.offset.x < -threshold) goNext();
+      else if (info.offset.x > threshold) goPrev();
+    },
+    [goNext, goPrev]
+  );
+
     return (
       <div className="overflow-hidden rounded-2xl bg-secondary">
         <div className="flex aspect-[4/3] w-full items-center justify-center">
