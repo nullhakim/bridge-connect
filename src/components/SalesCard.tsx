@@ -31,7 +31,7 @@ export default function SalesCard({ sales }: SalesCardProps) {
         <p className="text-xs font-medium text-muted-foreground">
           {sales.role}
         </p>
-        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+        <p className="mt-1 line-clamp-3 text-sm text-muted-foreground">
           {sales.bio}
         </p>
       </div>
