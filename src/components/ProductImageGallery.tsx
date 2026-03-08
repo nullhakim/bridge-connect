@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence, type PanInfo } from "framer-motion";
 import { ShoppingBag, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,16 +9,6 @@ interface ProductImageGalleryProps {
   productName: string;
 }
 
-function getDistance(t1: React.Touch, t2: React.Touch) {
-  return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-}
-
-function getMidpoint(t1: React.Touch, t2: React.Touch) {
-  return {
-    x: (t1.clientX + t2.clientX) / 2,
-    y: (t1.clientY + t2.clientY) / 2,
-  };
-}
 
 export default function ProductImageGallery({
   mainImage,
@@ -40,18 +30,11 @@ export default function ProductImageGallery({
   // Pinch-to-zoom state
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
-  const pinchRef = useRef<{
-    startDist: number;
-    startScale: number;
-    startMid: { x: number; y: number };
-    startTranslate: { x: number; y: number };
-  } | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
-
+  const zoomContainerRef = useRef<HTMLDivElement>(null);
   const resetZoomState = useCallback(() => {
     setScale(1);
     setTranslate({ x: 0, y: 0 });
-    pinchRef.current = null;
   }, []);
 
   const goNext = useCallback(() => {
@@ -74,46 +57,81 @@ export default function ProductImageGallery({
     [goNext, goPrev, scale]
   );
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      const dist = getDistance(e.touches[0], e.touches[1]);
-      const mid = getMidpoint(e.touches[0], e.touches[1]);
-      pinchRef.current = {
-        startDist: dist,
-        startScale: scale,
-        startMid: mid,
-        startTranslate: { ...translate },
-      };
-    }
-  }, [scale, translate]);
+  // Use ref-based non-passive touch listeners so preventDefault() works
+  useEffect(() => {
+    const container = zoomContainerRef.current;
+    if (!container || !zoomed) return;
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2 && pinchRef.current) {
-      e.preventDefault();
-      const dist = getDistance(e.touches[0], e.touches[1]);
-      const mid = getMidpoint(e.touches[0], e.touches[1]);
-      const newScale = Math.min(
-        5,
-        Math.max(1, pinchRef.current.startScale * (dist / pinchRef.current.startDist))
-      );
-      const dx = mid.x - pinchRef.current.startMid.x;
-      const dy = mid.y - pinchRef.current.startMid.y;
-      setScale(newScale);
-      setTranslate({
-        x: pinchRef.current.startTranslate.x + dx,
-        y: pinchRef.current.startTranslate.y + dy,
+    let pinchData: {
+      startDist: number;
+      startScale: number;
+      startMid: { x: number; y: number };
+      startTranslate: { x: number; y: number };
+    } | null = null;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dist = Math.hypot(
+          e.touches[1].clientX - e.touches[0].clientX,
+          e.touches[1].clientY - e.touches[0].clientY
+        );
+        const mid = {
+          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+        };
+        pinchData = {
+          startDist: dist,
+          startScale: scale,
+          startMid: mid,
+          startTranslate: { ...translate },
+        };
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && pinchData) {
+        e.preventDefault();
+        const dist = Math.hypot(
+          e.touches[1].clientX - e.touches[0].clientX,
+          e.touches[1].clientY - e.touches[0].clientY
+        );
+        const mid = {
+          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+        };
+        const newScale = Math.min(5, Math.max(1, pinchData.startScale * (dist / pinchData.startDist)));
+        const dx = mid.x - pinchData.startMid.x;
+        const dy = mid.y - pinchData.startMid.y;
+        setScale(newScale);
+        setTranslate({
+          x: pinchData.startTranslate.x + dx,
+          y: pinchData.startTranslate.y + dy,
+        });
+      }
+    };
+
+    const onTouchEnd = () => {
+      pinchData = null;
+      setScale((s) => {
+        if (s <= 1.05) {
+          setTranslate({ x: 0, y: 0 });
+          return 1;
+        }
+        return s;
       });
-    }
-  }, []);
+    };
 
-  const handleTouchEnd = useCallback(() => {
-    pinchRef.current = null;
-    if (scale <= 1.05) {
-      setScale(1);
-      setTranslate({ x: 0, y: 0 });
-    }
-  }, [scale]);
+    container.addEventListener("touchstart", onTouchStart, { passive: false });
+    container.addEventListener("touchmove", onTouchMove, { passive: false });
+    container.addEventListener("touchend", onTouchEnd);
 
+    return () => {
+      container.removeEventListener("touchstart", onTouchStart);
+      container.removeEventListener("touchmove", onTouchMove);
+      container.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [zoomed, scale, translate]);
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (scale > 1.1) {
@@ -206,11 +224,12 @@ export default function ProductImageGallery({
       <AnimatePresence>
         {zoomed && (
           <motion.div
+            ref={zoomContainerRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 touch-none"
             onClick={() => {
               if (scale <= 1.1) {
                 resetZoomState();
@@ -258,10 +277,10 @@ export default function ProductImageGallery({
               key={currentImage}
               src={currentImage!}
               alt={`${productName} - ${selectedIndex + 1}`}
-              className="max-h-[85vh] max-w-[92vw] rounded-lg object-contain touch-none select-none"
+              className="max-h-[85vh] max-w-[92vw] rounded-lg object-contain select-none"
               style={{
                 transform: `scale(${scale}) translate(${translate.x / scale}px, ${translate.y / scale}px)`,
-                transition: pinchRef.current ? "none" : "transform 0.2s ease-out",
+                transition: "transform 0.2s ease-out",
               }}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1, x: 0 }}
@@ -273,9 +292,6 @@ export default function ProductImageGallery({
               onDragEnd={handleDragEnd}
               onClick={(e) => e.stopPropagation()}
               onDoubleClick={handleDoubleClick}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
             />
 
             {/* Counter */}
